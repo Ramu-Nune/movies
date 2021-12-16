@@ -7,12 +7,17 @@
 		</el-row>
 		<el-row type="flex" justify="center">
 			<el-col v-if="pagination">
-				<el-pagination class="pull-right" :page-size="page.size" layout="total, sizes, prev, pager, next, jumper" :total="page.total" :current-page.sync="page.current" @current-change="getMovies" @size-change="size => ((page.size = size) && getMovies())"></el-pagination>
+				<el-pagination class="pull-right" :page-size="page.size" layout="total, prev, pager, next, jumper" :total="page.total" :current-page.sync="page.current" @current-change="getMovies" @size-change="size => ((page.size = size) && getMovies())"></el-pagination>
 			</el-col>
 		</el-row>
 		<el-row type="flex" justify="center" v-loading="pending">
 			<el-col :span="12">
 				<el-table :data="tableData" style="width: 100%">
+					<el-table-column prop="Title" label="" width="30">
+						<template slot-scope="scope">
+							<i :class="scope.row.star ? 'el-icon-star-on' : 'el-icon-star-off'" @click="toggleStar(scope.row)"></i>
+						</template>
+					</el-table-column>
 					<el-table-column prop="Title" label="Title"></el-table-column>
 					<el-table-column prop="Year" label="Year" width="180"></el-table-column>
 					<el-table-column prop="imdbID" label="ID" width="180"></el-table-column>
@@ -54,7 +59,11 @@ export default {
 				this.pagination = data.total > 10
 				this.page.size = data.per_page
 				this.page.total = data.total_pages
-				this.tableData = data.data
+				let favourites = JSON.parse(localStorage.getItem('favourites'))
+				this.tableData = data.data.map(row => {
+					row.star = favourites.some(x => x.imdbID === row.imdbID)
+					return row
+				})
 			} catch (err) {
 				this.$message({
 					showClose: true,
@@ -65,6 +74,11 @@ export default {
 			} finally {
 				this.pending = false
 			}
+		},
+		toggleStar (row) {
+			row.star = !row.star
+			let favourites = this.tableData.filter(x => x.star)
+			localStorage.setItem('favourites', JSON.stringify(favourites))
 		}
 	}
 }
